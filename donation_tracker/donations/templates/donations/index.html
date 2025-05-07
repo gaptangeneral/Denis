@@ -1,0 +1,95 @@
+{% load bootstrap5 %}
+{% bootstrap_css %}
+{% bootstrap_javascript %}
+
+<div class="container mt-4">
+    <h1 class="mb-4 text-center">Bağış Takip Sistemi</h1>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Yeni Bağış Ekle</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{% url 'donations:donation_list' %}"> {# Form aynı sayfaya (donation_list view'ına) gönderilecek #}
+                {% csrf_token %}
+
+                {# Django-bootstrap5 ile formu güzelce render etme #}
+                {% bootstrap_form form layout='vertical' %}
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success mt-3">Bağışı Kaydet (Save Donation)</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <h2 class="mt-5 mb-3">Mevcut Bağışlar</h2>
+    {% if donations %}
+        <div class="list-group">
+            {% for donation in donations %}
+                <div class="list-group-item list-group-item-action flex-column align-items-start mb-2 shadow-sm">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{ donation.name_surname }}</h5>
+                        <small class="text-muted">{{ donation.created_at|date:"d M Y, H:i" }}</small>
+                    </div>
+                    <p class="mb-1"><strong>Miktar:</strong> {{ donation.amount }} USD</p>
+                    <p class="mb-1"><strong>Telefon:</strong> {{ donation.phone_number }}</p>
+                    <p class="mb-1">
+                        <strong>Durum:</strong>
+                        {% if donation.donation_status %}
+                            <span class="badge bg-success">Tamamlandı</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Beklemede</span>
+                        {% endif %}
+                    </p>
+                    {% if donation.explanation %}
+                        <small class="text-muted"><strong>Açıklama:</strong> {{ donation.explanation }}</small>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            Henüz kayıtlı bağış bulunmamaktadır. İlk bağışı yukarıdaki formdan ekleyebilirsiniz!
+        </div>
+    {% endif %}
+</div>
+
+<footer class="text-center mt-5 mb-3">
+    <p>&copy; {% now "Y" %} Bağış Takip Sistemi</p>
+</footer>
+
+{% bootstrap_javascript %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusField = document.getElementById('id_donation_status');
+        const explanationTextarea = document.getElementById('id_explanation');
+        const explanationLabel = document.querySelector('label[for="id_explanation"]');
+    
+        // Modeldeki 'NOT_COMPLETED' durumunun gerçek değeri
+        const STATUS_NOT_COMPLETED_VALUE = '{{ Donation.STATUS_NOT_COMPLETED }}'; // VEYA doğrudan 'NOT_COMPLETED' yazabilirsiniz
+    
+        function updateExplanationFieldAppearance() {
+            if (!statusField || !explanationTextarea || !explanationLabel) {
+                return; // Elemanlar bulunamazsa işlemi durdur
+            }
+    
+            if (statusField.value === STATUS_NOT_COMPLETED_VALUE) {
+                explanationLabel.innerHTML = 'Tamamlanmama Nedeni (Reason for Not Completed) <span class="text-danger fw-bold">*</span>';
+                explanationTextarea.placeholder = 'Lütfen tamamlanmama nedenini detaylıca belirtin (Please specify the reason in detail)';
+                // İsteğe bağlı: JavaScript ile zorunlu hale getirme (backend'de de kontrol edilmeli)
+                // explanationTextarea.required = true;
+            } else {
+                explanationLabel.innerHTML = 'Genel Açıklama (General Explanation)';
+                explanationTextarea.placeholder = 'General explanation (optional)';
+                // explanationTextarea.required = false;
+            }
+        }
+    
+        if (statusField) {
+            statusField.addEventListener('change', updateExplanationFieldAppearance);
+            // Sayfa yüklendiğinde mevcut duruma göre ilk ayarı yap
+            updateExplanationFieldAppearance();
+        }
+    });
+    </script>
